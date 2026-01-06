@@ -6,10 +6,7 @@ import android.os.Handler
 import android.os.Looper
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import com.thefarhany.tugas2.R
-import com.thefarhany.tugas2.data.local.UserPreferences
+import com.thefarhany.tugas2.data.local.SessionManager
 import com.thefarhany.tugas2.databinding.ActivitySplashBinding
 import com.thefarhany.tugas2.ui.auth.LoginActivity
 import com.thefarhany.tugas2.ui.home.HomeActivity
@@ -17,16 +14,15 @@ import com.thefarhany.tugas2.ui.home.HomeActivity
 class SplashActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivitySplashBinding
-    private lateinit var userPreferences: UserPreferences
+    private lateinit var sessionManager: SessionManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-
         binding = ActivitySplashBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        userPreferences = UserPreferences(this)
+        sessionManager = SessionManager(this)
 
         Handler(Looper.getMainLooper()).postDelayed({
             navigateNext()
@@ -34,12 +30,11 @@ class SplashActivity : AppCompatActivity() {
     }
 
     private fun navigateNext() {
-        val intent = if (userPreferences.isLoggedIn()) {
+        val intent = if (sessionManager.isLoggedIn()) {
             Intent(this, HomeActivity::class.java)
         } else {
             Intent(this, LoginActivity::class.java)
         }
-
         startActivity(intent)
         finish()
     }

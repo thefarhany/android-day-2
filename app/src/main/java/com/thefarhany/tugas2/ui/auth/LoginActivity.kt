@@ -5,17 +5,18 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import com.thefarhany.tugas2.R
-import com.thefarhany.tugas2.data.local.UserPreferences
+import androidx.lifecycle.lifecycleScope
+import com.thefarhany.tugas2.data.local.SessionManager
+import com.thefarhany.tugas2.data.repository.AuthRepository
 import com.thefarhany.tugas2.databinding.ActivityLoginBinding
 import com.thefarhany.tugas2.ui.home.HomeActivity
+import kotlinx.coroutines.launch
 
 class LoginActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityLoginBinding
-    private lateinit var userPreferences: UserPreferences
+    private val authRepository = AuthRepository()
+    private lateinit var sessionManager: SessionManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -24,7 +25,13 @@ class LoginActivity : AppCompatActivity() {
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        userPreferences = UserPreferences(this)
+        sessionManager = SessionManager(this)
+
+        if (sessionManager.isLoggedIn()) {
+            startActivity(Intent(this, HomeActivity::class.java))
+            finish()
+            return
+        }
 
         setupListener()
     }
@@ -47,18 +54,17 @@ class LoginActivity : AppCompatActivity() {
             return
         }
 
-        val savedUser = userPreferences.getUser()
-        if (savedUser == null) {
-            Toast.makeText(this, "Belum ada akun, silakan register dulu", Toast.LENGTH_SHORT).show()
-            return
-        }
+        lifecycleScope.launch {
+            try {
+                val res = authRepository.login(email, password)
+                sessionManager.saveToken(res.token)
 
-        if (email == savedUser.email && password == savedUser.password) {
-            userPreferences.setLoggedIn(true)
-            startActivity(Intent(this, HomeActivity::class.java))
-            finish()
-        } else {
-            Toast.makeText(this, "Email atau password salah", Toast.LENGTH_SHORT).show()
+                val homeIntent = Intent(this@LoginActivity, HomeActivity::class.java)
+                startActivity(homeIntent)
+                finish()
+            } catch (e: Exception) {
+                Toast.makeText(this@LoginActivity, e.message ?: "Login gagal", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 }
